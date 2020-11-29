@@ -86,7 +86,7 @@ int main() {
         "quit"
     };
 
-    std::cout << "Parsing good messages\n";
+    std::cout << "Parsing good messages:\n";
     for (std::string s : goodMessages) {
         std::cout << " Parsing message " << s << std::endl;
         interface.parseMessage(s);
