@@ -2,6 +2,12 @@
 
 #include <regex>
 #include <sstream>
+#include <mutex>
+#include <thread>
+#include <deque>
+#include <condition_variable>
+#include <string>
+#include <chrono>
 
 #define DUMMY_HANDLING
 
@@ -267,7 +273,6 @@ chessInterface::chessInterface() :
 
     debug_mode = false;
     engine_name = "strawberry";
-    endinge_code = "";
 }
 
 chessInterface::chessInterface(std::istream& in, std::ostream& out, std::ostream& err)  :
@@ -277,7 +282,6 @@ chessInterface::chessInterface(std::istream& in, std::ostream& out, std::ostream
 
     debug_mode = false;
     engine_name = "strawberry";
-    endinge_code = "";
 }
 
 void chessInterface::sendIDNameMessage(std::string name) const {
@@ -457,6 +461,41 @@ std::string chessInterface::readInput() const {
     }
 #endif  // DUMMY_HANDLING
 
+
+void chessInterface::inputLoop() {
+    std::string tmp;
+    while (true) {
+        tmp = readInput();
+        std::lock_guard<std::mutex> lock{mutex};
+        inputLines.push_back(std::move(tmp));
+        cv.notify_one();
+    }
+}
+
+void chessInterface::processLoop() {
+    while (true) {
+        {
+            std::unique_lock<std::mutex> lock{mutex};
+            if (cv.wait_for(lock, std::chrono::seconds(0), [&]{
+                return !inputLines.empty();
+            })) {
+                std::swap(inputLines, processLines);
+            }
+        }
+        if (!processLines.empty()) {
+            for (auto&& line : processLines) {
+                parseMessage(line);
+            }
+            processLines.clear();
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}
+
+void chessInterface::mainLoop() {
+    std::thread io{&chessUCI::chessInterface::inputLoop, this};
+    processLoop();
+}
 
 void chessInterface::handleInvalidMessage(std::string message) {
     cerr << "Invalid message received: " << message << "\n";

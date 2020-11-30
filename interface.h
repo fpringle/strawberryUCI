@@ -4,6 +4,12 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <mutex>
+#include <deque>
+#include <thread>
+#include <condition_variable>
+#include <chrono>
+
 
 namespace chessUCI {
 
@@ -145,6 +151,11 @@ private:
     std::string engine_name;
     std::string registered_name;
     std::string registered_code;
+
+    std::condition_variable cv;
+    std::mutex mutex;
+    std::deque<std::string> inputLines;
+    std::deque<std::string> processLines;
 public:
     chessInterface();
     chessInterface(std::istream& in, std::ostream& out, std::ostream& err);
@@ -174,6 +185,9 @@ public:
     void handleInvalidMessage(std::string message);
 
     std::string readInput() const;
+    void inputLoop();
+    void processLoop();
+    void mainLoop();
     void parseMessage(std::string message);
 };
 
