@@ -338,21 +338,6 @@ void chessInterface::sendOptionMessage(MessageTypes::OptionMessage optionMessage
     cout << optionMessage;
 }
 
-bool isGoToken(std::string token) {
-    return token == "searchmoves" ||
-           token == "ponder" ||
-           token == "wtime" ||
-           token == "btime" ||
-           token == "winc" ||
-           token == "binc" ||
-           token == "movestogo" ||
-           token == "depth" ||
-           token == "nodes" ||
-           token == "mate" ||
-           token == "movetime" ||
-           token == "infinite";
-}
-
 std::string chessInterface::readInput() const {
     std::string inputLine;
     std::getline(cin, inputLine);
@@ -499,6 +484,25 @@ void chessInterface::mainLoop() {
 
 void chessInterface::handleInvalidMessage(std::string message) {
     cerr << "Invalid message received: " << message << "\n";
+}
+
+namespace {
+
+    bool isGoToken(std::string token) {
+        return token == "searchmoves" ||
+               token == "ponder" ||
+               token == "wtime" ||
+               token == "btime" ||
+               token == "winc" ||
+               token == "binc" ||
+               token == "movestogo" ||
+               token == "depth" ||
+               token == "nodes" ||
+               token == "mate" ||
+               token == "movetime" ||
+               token == "infinite";
+    }
+
 }
 
 void chessInterface::parseMessage(std::string message) {

@@ -11,6 +11,14 @@
 #include <chrono>
 
 
+/**
+ *  \namespace chessUCI
+ *  \brief The namespace for the UCI interface of the chess engine.
+ *
+ *  The namespace chessUCI contains all the classes, functions, constants etc
+ *  required so that strawberry can communicate with a GUI via the
+ *  Universal Chess Interface (UCI) protocol.
+ */
 namespace chessUCI {
 
 /**
