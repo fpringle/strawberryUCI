@@ -13,52 +13,55 @@
 
 namespace chessUCI {
 
-std::string upper_string(std::string s) {
-    std::stringstream ss;
-    for (char c : s) {
-        ss << char(toupper(c));
+namespace {
+    std::string upper_string(std::string s) {
+        std::stringstream ss;
+        for (char c : s) {
+            ss << char(toupper(c));
+        }
+        return ss.str();
     }
-    return ss.str();
-}
 
-std::string lower_string(std::string s) {
-    std::stringstream ss;
-    for (char c : s) {
-        ss << char(tolower(c));
+    std::string lower_string(std::string s) {
+        std::stringstream ss;
+        for (char c : s) {
+            ss << char(tolower(c));
+        }
+        return ss.str();
     }
-    return ss.str();
-}
 
-bool is_integer(std::string s) {
-    for (char c : s) {
-        if (c < '0' || c > '9') return false;
+    bool is_integer(std::string s) {
+        for (char c : s) {
+            if (c < '0' || c > '9') return false;
+        }
+        return true;
     }
-    return true;
-}
 
-std::vector<std::string> tokenise_string(std::string s) {
+    std::vector<std::string> tokenise_string(std::string s) {
 
-    const std::regex re("\\s+");
-    std::sregex_token_iterator it{s.begin(), s.end(), re, -1};
-    std::vector<std::string> tokens{it, {}};
-    tokens.erase(
-        std::remove_if(tokens.begin(),
-                       tokens.end(),
-                       [](std::string const& str) {
-                           return str.size() == 0;
-                       }),
-        tokens.end());
+        const std::regex re("\\s+");
+        std::sregex_token_iterator it{s.begin(), s.end(), re, -1};
+        std::vector<std::string> tokens{it, {}};
+        tokens.erase(
+            std::remove_if(tokens.begin(),
+                           tokens.end(),
+                           [](std::string const& str) {
+                               return str.size() == 0;
+                           }),
+            tokens.end());
 
-    return tokens;
-    std::vector<std::string> _tokens;
-    std::string token;
-    std::stringstream ss(s);
-    while (std::getline(ss, token, ' ')) {
-        if (token.empty()) continue;
-        _tokens.push_back(token);
+        return tokens;
+        std::vector<std::string> _tokens;
+        std::string token;
+        std::stringstream ss(s);
+        while (std::getline(ss, token, ' ')) {
+            if (token.empty()) continue;
+            _tokens.push_back(token);
+        }
+        return _tokens;
     }
-    return _tokens;
-}
+
+}   // end of anonymous namespace
 
 namespace MessageTypes {
 
