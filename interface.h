@@ -11,6 +11,9 @@
 #include <thread>
 #include <vector>
 
+#include "board.h"
+#include "search.h"
+
 
 /**
  *  \namespace chessUCI
@@ -232,6 +235,15 @@ class chessInterface {
     std::deque<std::string> inputLines;
     /** A deque to hold the lines to be parsed. */
     std::deque<std::string> processLines;
+
+    /** The Searcher object of the interface. */
+    chessCore::Searcher* searcher;
+
+    /** The board we're searching. */
+    chessCore::board* game_board;
+
+    /** Whether or not we're ready to search. */
+    bool ready;
 
  public:
     /** Default constructor for chessInterface. */

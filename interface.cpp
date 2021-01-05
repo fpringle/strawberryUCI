@@ -16,14 +16,6 @@
 namespace chessUCI {
 
 namespace {
-    std::string upper_string(std::string s) {
-        std::stringstream ss;
-        for (char c : s) {
-            ss << char(toupper(c));
-        }
-        return ss.str();
-    }
-
     std::string lower_string(std::string s) {
         std::stringstream ss;
         for (char c : s) {
@@ -292,6 +284,8 @@ chessInterface::chessInterface() :
                     cerr(std::cerr) {
     debug_mode = false;
     engine_name = "strawberry";
+    searcher = new chessCore::Searcher;
+    ready = false;
 }
 
 chessInterface::chessInterface(std::istream& in, std::ostream& out,
@@ -299,6 +293,8 @@ chessInterface::chessInterface(std::istream& in, std::ostream& out,
         cin(in), cout(out), cerr(err) {
     debug_mode = false;
     engine_name = "strawberry";
+    searcher = new chessCore::Searcher;
+    ready = false;
 }
 
 void chessInterface::sendIDNameMessage(std::string name) const {
@@ -458,34 +454,71 @@ std::string chessInterface::readInput() const {
         // ready
         sendUCIOkMessage();
     }
+
     void chessInterface::handleDebugMessage(bool on) {
         debug_mode = on;
     }
+
     void chessInterface::handleIsReadyMessage() {
-        sendReadyOkMessage();
+        if (read) {
+            sendReadyOkMessage();
+        } else {
+            // hmmmmmm
+        }
     }
+
     void chessInterface::handleSetOptionMessage(std::string name,
                                                 std::string value) {
     }
+
     void chessInterface::handleRegisterMessage(bool later, std::string name,
                                                std::string code) {
         if (later) return;
         if (!name.empty()) registered_name = name;
         if (!code.empty()) registered_code = code;
     }
+
     void chessInterface::handleUCINewGameMessage() {
+        if (ready) {
+            delete game_board
+        }
+        ready = false;
     }
+
     void chessInterface::handlePositionMessage(std::string position,
                                                std::vector<std::string> moves) {
+        if (ready) {
+            delete game_board;
+        }
+
+        ready = false;
+
+        if (position = "startpos") {
+            game_board = new chessCore::board;
+        } else {
+            game_board = new chessCore::board(position);
+        }
+
+        move_t move;
+        for (std::string move_str : move) {
+            move = game_board->move_from_SAN(move_str);
+            game_board->doMoveInPlace(move);
+        }
+        ready = true;
     }
+
     void chessInterface::handleGoMessage(MessageTypes::GoMessage goMessage) {
     }
+
     void chessInterface::handleStopMessage() {
     }
+
     void chessInterface::handlePonderHitMessage() {
     }
+
     void chessInterface::handleQuitMessage() {
     }
+
 #endif  // DUMMY_HANDLING
 
 
@@ -552,11 +585,12 @@ void chessInterface::parseMessage(std::string message) {
     if (tokens.empty()) return;
 
     std::string message_type = tokens[0];
+    int num_tokens = tokens.size();
 
     if (message_type == "uci") {
         handleUCIMessage();
     } else if (message_type == "debug") {
-        if (tokens.size() < 2) {
+        if (num_tokens < 2) {
             handleInvalidMessage(message);
             return;
         }
@@ -568,14 +602,14 @@ void chessInterface::parseMessage(std::string message) {
     } else if (message_type == "isready") {
         handleIsReadyMessage();
     } else if (message_type == "setoption") {
-        if (tokens.size() < 3 || tokens[1] != "name") {
+        if (num_tokens < 3 || tokens[1] != "name") {
             handleInvalidMessage(message);
         }
         std::stringstream option_name;
         std::stringstream option_value;
         int i = 2;
         bool reading_value = false;
-        while (i < tokens.size()) {
+        while (i < num_tokens) {
             if (tokens[i] == "value") {
                 reading_value = true;
             } else if (reading_value) {
@@ -589,10 +623,10 @@ void chessInterface::parseMessage(std::string message) {
         }
         handleSetOptionMessage(option_name.str(), option_value.str());
     } else if (message_type == "register") {
-        if (tokens.size() < 2) {
+        if (num_tokens < 2) {
             handleInvalidMessage(message);
         } else if (tokens[1] == "later") {
-            if (tokens.size() > 2) {
+            if (num_tokens > 2) {
                 handleInvalidMessage(message);
             } else {
                 handleRegisterMessage(true, "", "");
@@ -602,7 +636,7 @@ void chessInterface::parseMessage(std::string message) {
             std::stringstream register_code;
             int i = 1;
             bool reading_code = false;
-            while (i < tokens.size()) {
+            while (i < num_tokens) {
                 if (tokens[i] == "name") {
                     reading_code = false;
                 } else if (tokens[i] == "code") {
@@ -622,8 +656,8 @@ void chessInterface::parseMessage(std::string message) {
     } else if (message_type == "ucinewgame") {
         handleUCINewGameMessage();
     } else if (message_type == "position") {  // word moves
-        if (tokens.size() < 2) handleInvalidMessage(message);
-        if (tokens[1] == "fen" && tokens.size() < 3) {
+        if (num_tokens < 2) handleInvalidMessage(message);
+        if (tokens[1] == "fen" && num_tokens < 3) {
             handleInvalidMessage(message);
         }
         std::vector<std::string> moves(tokens.begin() + 2, tokens.end());
@@ -633,14 +667,14 @@ void chessInterface::parseMessage(std::string message) {
     } else if (message_type == "go") {
         MessageTypes::GoMessage goMessage;
         int i = 1;
-        while (i < tokens.size()) {
+        while (i < num_tokens) {
             if (tokens[i] == "searchmoves") {
                 i++;
-                if (!(i < tokens.size() && !isGoToken(tokens[i]))) {
+                if (!(i < num_tokens && !isGoToken(tokens[i]))) {
                     handleInvalidMessage(message);
                     return;
                 }
-                while (i < tokens.size() && !isGoToken(tokens[i])) {
+                while (i < num_tokens && !isGoToken(tokens[i])) {
                     goMessage.searchmoves.push_back(tokens[i]);
                     i++;
                 }
@@ -648,63 +682,63 @@ void chessInterface::parseMessage(std::string message) {
                 goMessage.ponder = true;
                 i++;
             } else if (tokens[i] == "wtime") {
-                if (i + 1 >= tokens.size() || (!is_integer(tokens[i+1]))) {
+                if (i + 1 >= num_tokens || (!is_integer(tokens[i+1]))) {
                     handleInvalidMessage(message);
                     return;
                 }
                 goMessage.wtime = std::stoi(tokens[i+1]);
                 i += 2;
             } else if (tokens[i] == "btime") {
-                if (i + 1 >= tokens.size() || (!is_integer(tokens[i+1]))) {
+                if (i + 1 >= num_tokens || (!is_integer(tokens[i+1]))) {
                     handleInvalidMessage(message);
                     return;
                 }
                 goMessage.btime = std::stoi(tokens[i+1]);
                 i += 2;
             } else if (tokens[i] == "winc") {
-                if (i + 1 >= tokens.size() || (!is_integer(tokens[i+1]))) {
+                if (i + 1 >= num_tokens || (!is_integer(tokens[i+1]))) {
                     handleInvalidMessage(message);
                     return;
                 }
                 goMessage.winc = std::stoi(tokens[i+1]);
                 i += 2;
             } else if (tokens[i] == "binc") {
-                if (i + 1 >= tokens.size() || (!is_integer(tokens[i+1]))) {
+                if (i + 1 >= num_tokens || (!is_integer(tokens[i+1]))) {
                     handleInvalidMessage(message);
                     return;
                 }
                 goMessage.binc = std::stoi(tokens[i+1]);
                 i += 2;
             } else if (tokens[i] == "movestogo") {
-                if (i + 1 >= tokens.size() || (!is_integer(tokens[i+1]))) {
+                if (i + 1 >= num_tokens || (!is_integer(tokens[i+1]))) {
                     handleInvalidMessage(message);
                     return;
                 }
                 goMessage.movestogo = std::stoi(tokens[i+1]);
                 i += 2;
             } else if (tokens[i] == "depth") {
-                if (i + 1 >= tokens.size() || (!is_integer(tokens[i+1]))) {
+                if (i + 1 >= num_tokens || (!is_integer(tokens[i+1]))) {
                     handleInvalidMessage(message);
                     return;
                 }
                 goMessage.depth = std::stoi(tokens[i+1]);
                 i += 2;
             } else if (tokens[i] == "nodes") {
-                if (i + 1 >= tokens.size() || (!is_integer(tokens[i+1]))) {
+                if (i + 1 >= num_tokens || (!is_integer(tokens[i+1]))) {
                     handleInvalidMessage(message);
                     return;
                 }
                 goMessage.nodes = std::stoi(tokens[i+1]);
                 i += 2;
             } else if (tokens[i] == "mate") {
-                if (i + 1 >= tokens.size() || (!is_integer(tokens[i+1]))) {
+                if (i + 1 >= num_tokens || (!is_integer(tokens[i+1]))) {
                     handleInvalidMessage(message);
                     return;
                 }
                 goMessage.mate = std::stoi(tokens[i+1]);
                 i += 2;
             } else if (tokens[i] == "movetime") {
-                if (i + 1 >= tokens.size() || (!is_integer(tokens[i+1]))) {
+                if (i + 1 >= num_tokens || (!is_integer(tokens[i+1]))) {
                     handleInvalidMessage(message);
                     return;
                 }
