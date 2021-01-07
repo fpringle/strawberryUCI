@@ -240,7 +240,7 @@ class chessInterface {
     chessCore::Searcher* searcher;
 
     /** The board we're searching. */
-    chessCore::board* game_board;
+    chessCore::Board* game_board;
 
     /** Whether or not we're ready to search. */
     bool ready;

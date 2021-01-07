@@ -494,9 +494,9 @@ std::string chessInterface::readInput() const {
         ready = false;
 
         if (position = "startpos") {
-            game_board = new chessCore::board;
+            game_board = new chessCore::Board;
         } else {
-            game_board = new chessCore::board(position);
+            game_board = new chessCore::Board(position);
         }
 
         move_t move;
