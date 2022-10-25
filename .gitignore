@@ -18,3 +18,4 @@
 
 .qmake*
 qrc_icons.cpp
+Makefile
